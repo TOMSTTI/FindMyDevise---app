@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: findmydevice-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MONGO_URI=mongodb://mongo:27017/findmydevice
+      - JWT_SECRET=supersecretjwtkey_change_in_production
+    depends_on:
+      - mongo
+    networks:
+      - findmydevice-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: findmydevice-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+    depends_on:
+      - backend
+    networks:
+      - findmydevice-network
+    # Required for Vite hot reloading in Docker
+    volumes:
+      - ./frontend/src:/app/src
+    command: npm run dev -- --host 0.0.0.0
+
+  mongo:
+    image: mongo:6.0
+    container_name: findmydevice-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - findmydevice-network
+
+networks:
+  findmydevice-network:
+    driver: bridge
+
+volumes:
+  mongo_data:
